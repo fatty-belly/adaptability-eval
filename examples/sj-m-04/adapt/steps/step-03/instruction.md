@@ -1,0 +1,3 @@
+Please extend `qtutils.qobj_repr` so it can optionally include parent context in the returned string. I want an opt-in argument, disabled by default, where calling it in that mode on a `QObject` that has a parent appends a readable representation of the parent as well, so it's easier to see where the object sits in the hierarchy. The normal/default call must stay byte-for-byte identical to its current output, and only the explicit opt-in path should add the parent information.
+
+The option is `include_parent=False`; when true, append `parent=` and the immediate parent's description without recursively including grandparents.

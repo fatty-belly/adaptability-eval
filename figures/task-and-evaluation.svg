@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="742" viewBox="0 0 1280 742" role="img" aria-labelledby="title desc">
+  <title id="title">One final requirement, four evaluation conditions</title>
+  <desc id="desc">In Emoji-Process, the first request uses Python string indices. The follow-up switches existing APIs to UTF-16 offsets. A direct request specifies UTF-16 from the start. Both paths use the same final test contract. The four conditions vary the code and conversation available at the final request.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0l8 4-8 4z" fill="#60758d"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="1278" height="740" rx="24" fill="#f8faff" stroke="#d9e3ef" stroke-width="2"/>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#152741">
+    <text x="46" y="46" font-size="16" font-weight="700" letter-spacing="2" fill="#28559d">ADAPTABILITY BENCHMARK</text>
+    <text x="46" y="93" font-size="42" font-weight="700">One final requirement, two ways to ask</text>
+    <text x="46" y="128" font-size="22" fill="#465a72">In Emoji-Process, changing the offset units moves the same match from [1, 2) to [1, 3).</text>
+
+    <rect x="46" y="162" width="1188" height="220" rx="15" fill="#fff" stroke="#d9e3ef"/>
+    <path d="M64 270h1152" stroke="#dce5ef"/>
+    <g font-size="16" font-weight="700" letter-spacing="1.1" fill="#28559d">
+      <text x="66" y="205">DIRECT</text>
+      <text x="66" y="314">FULL</text>
+    </g>
+    <g font-size="21" font-weight="700">
+      <text x="192" y="207">Initial repo</text>
+      <text x="395" y="207">B · Final request</text>
+      <text x="192" y="316">Initial repo</text>
+      <text x="395" y="316">A · First request</text>
+      <text x="735" y="316" fill="#923c13">B · Changed request</text>
+    </g>
+    <g font-size="20" fill="#465a72">
+      <text x="395" y="240">Expose match spans in UTF-16 code units.</text>
+      <text x="395" y="349">Use Python string indices.</text>
+      <text x="735" y="349">Switch existing spans to UTF-16.</text>
+    </g>
+    <g fill="none" stroke="#60758d" stroke-width="2" marker-end="url(#arrow)">
+      <path d="M316 200h54"/><path d="M316 310h54"/><path d="M650 310h62"/>
+      <path d="M870 215h156"/><path d="M959 305h67"/>
+    </g>
+    <rect x="1047" y="179" width="167" height="185" rx="12" fill="#dff3ed"/>
+    <g text-anchor="middle" fill="#155344" font-size="20">
+      <text x="1130" y="237" font-weight="700">Same final</text>
+      <text x="1130" y="263" font-weight="700">test contract</text>
+      <text x="1130" y="301" font-size="17">Emoji span</text>
+      <text x="1130" y="325" font-family="Consolas, monospace" font-size="18">[1, 3)</text>
+    </g>
+
+    <text x="46" y="428" font-size="27" font-weight="700">What the agent starts with at B</text>
+    <path d="M46 477h1188M46 522h1188M46 568h1188M46 614h1188M46 660h1188" stroke="#d2deeb"/>
+    <g font-size="16" font-weight="700" letter-spacing=".65" fill="#465a72">
+      <text x="48" y="466">CONDITION</text><text x="370" y="466">WORKSPACE</text>
+      <text x="707" y="466">CONVERSATION</text><text x="1110" y="466">PASS RATE</text>
+    </g>
+    <g font-size="21">
+      <g font-weight="700">
+        <text x="48" y="507">C0 · Direct</text><text x="48" y="553">C1 · Full</text>
+        <text x="48" y="599">C2 · History reset</text><text x="48" y="645">C3 · Oracle</text>
+      </g>
+      <text x="370" y="507">Initial repo</text><text x="370" y="553">Agent’s A implementation</text>
+      <text x="370" y="599">Same agent A checkpoint</text><text x="370" y="645">Reference A implementation</text>
+      <text x="707" y="507">Fresh conversation</text><text x="707" y="553">A conversation retained</text>
+      <text x="707" y="599">Fresh conversation</text><text x="707" y="645">Fresh conversation</text>
+      <g font-family="Georgia, serif" font-style="italic" font-weight="700" fill="#28559d">
+        <text x="1110" y="507">p<tspan dy="5" font-size="14">B</tspan></text>
+        <text x="1110" y="553">p<tspan dy="5" font-size="14">AB</tspan></text>
+        <text x="1110" y="599">p<tspan dy="5" font-size="14">reset</tspan></text>
+        <text x="1110" y="645">p<tspan dy="5" font-size="14">oracle</tspan></text>
+      </g>
+    </g>
+    <text x="46" y="704" font-size="19" fill="#465a72">
+      Full continues after a failed A. <tspan font-family="Georgia, serif" font-style="italic" font-weight="700" fill="#28559d">q</tspan> is the final pass rate among Full runs that passed A.
+    </text>
+  </g>
+</svg>

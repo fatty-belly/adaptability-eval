@@ -1,0 +1,79 @@
+Build Emoji-Process, an installable Python emoji processing library, in `/app`. Use Python 3.11.7. The supplied workspace contains the Unicode JSON data and loader in `emoji/unicode_codes/`, utility scripts in `utils/`, a starter `pyproject.toml`, and an example. Implement the core library and unified `emoji` package entry point. Keep all supplied emoji data and utility functionality available. Function interfaces satisfy the terminal-call interface requirement; a new CLI is optional.
+
+## Package and data
+
+Provide `emoji/__init__.py`, `emoji/core.py`, `emoji/tokenizer.py`, `emoji/py.typed`, and a complete `pyproject.toml` supporting `pip install -e .` and normal package installation with all JSON resources included. Export the main functions, configuration, `Token`, match classes, `EMOJI_DATA`, `STATUS`, and `LANGUAGES` from `import emoji`; expose version information (`__version__ = '2.14.1'`). Preserve module imports documented below. Declare the project dependencies, including requests>=2.32.3, beautifulsoup4>=4.12.3, cloudscraper>=1.2.71, pytest>=7.4.4, sphinx>=7.2.6, django>=4.1.1, and typing_extensions where needed. Retain the supplied generation, translation, example, and page-generation resources.
+
+Use the complete supplied Unicode dataset, including fully qualified, minimally qualified, unqualified, and component forms; skin tones, gender modifiers, flags, selectors, and RGI ZWJ combinations must be recognized correctly. Metadata includes canonical colon-delimited English names, aliases where present, emoji version `E`, numeric `status`, optional `variant`, and localized names. `STATUS` is `{'component': 1, 'fully_qualified': 2, 'minimally_qualified': 3, 'unqualified': 4}`. `LANGUAGES` in order is `['en','es','ja','ko','pt','it','fr','de','fa','id','zh','ru','tr','ar']`.
+
+Do not eagerly load every translation. The default metadata keys are `('en', 'alias', 'E', 'status')` plus dataset fields such as `variant`. Preserve `emoji.unicode_codes.EmojiDataDict` and its lazy `__missing__`: direct access to a supported unloaded language loads it with a deprecation warning, while an unknown key raises `KeyError`. `load_from_json(key)` loads a language once; unsupported languages raise `NotImplementedError`. `config.load_language(language=None)` accepts a language string, list of strings, or no language to load all languages. Both conversion functions load their requested language even on empty input.
+
+Keep `unicode_codes._open_file(name)` opening package resources in binary mode using importlib.resources; `_load_default_from_json()` initializes `EMOJI_DATA` and `_loaded_keys`. `get_emoji_by_name(name, language)` is cached (LRU maxsize 4000), returns the matching fully qualified/component emoji or `None`, and accepts canonical names in each language and English aliases with `language='alias'`.
+
+## Conversion interfaces
+
+Implement these signatures in `emoji.core`, also exported by `emoji`:
+
+```python
+emojize(string, delimiters=(':', ':'), variant=None, language='en', version=None, handle_version=None) -> str
+demojize(string, delimiters=(':', ':'), language='en', version=None, handle_version=None) -> str
+replace_emoji(string, replace='', version=-1) -> str
+```
+
+`emojize` converts delimited names to Unicode, preserving unknown names and all ordinary input text. Normalize the name with NFKC for lookup, without normalizing the surrounding text. Respect localized spellings, case, accents, permitted punctuation, combining marks, and English aliases. For example `emojize('Python is fun :thumbs_up:') == 'Python is fun 👍'`, `emojize(':thumbsup:', language='alias') == '👍'`, and `emojize('{thumbs_up}', delimiters=('{','}')) == '👍'`. Support arbitrary escaped multi-character delimiters, including delimiter characters meaningful to regular expressions; delimiters should contain a character outside the shortcode-name alphabet. Preserve `core._DEFAULT_DELIMITER = ':'` and `_EMOJI_NAME_PATTERN`, including supported Arabic and Japanese marks.
+
+`variant=None` selects the dataset's normal representation. For emoji marked `variant`, `text_type` replaces any trailing selector with VS15 (U+FE0E), and `emoji_type` uses VS16 (U+FE0F); `emojize(':red_heart:', variant='emoji_type') == '❤️'`. An invalid variant on a variant-capable conversion raises `ValueError`. The option does not alter emoji without variant support or unknown names.
+
+`demojize` converts recognized Unicode emoji to canonical names in the chosen language, or the first available alias in alias mode, replacing the surrounding colons with the requested delimiters. For example `demojize('Python is fun 👍') == 'Python is fun :thumbs_up:'` and `demojize('😯', delimiters=('__','__')) == '__hushed_face__'`. Handle qualification variants and presentation selectors consistently with the supplied data. Unsupported languages raise `NotImplementedError` in both directions.
+
+When `version` is set, conversion treats emoji with `E > version` as too new. With no `handle_version` they become the empty string; a string handler supplies replacement text; a callable handler receives `(unicode_emoji, metadata_copy)` and returns text. Do not call it for unrecognized names, non-emoji text, or emoji at/below the threshold. Preserve version metadata and callback order. Callback metadata contains zero-based UTF-16 code-unit offsets, with exclusive ends, into the unmodified original input. For emojize they delimit the original shortcode including its actual delimiters, not the Unicode replacement: with a callback formatting `[start,end]`, `emojize("😀:thumbs_up:", version=-1, handle_version=f)` returns `"😀[2,13]"`. For demojize they delimit the original Unicode emoji. Earlier replacements of any length must not shift later callback coordinates.
+
+`replace_emoji` replaces recognized emoji with a string or the return value of a callable `(unicode_emoji, metadata_copy) -> str`. Only emoji with `E > version` are replaced; the default -1 replaces all. Ordinary text and eligible older emoji remain intact. For example `replace_emoji('Hello 😄 world!', 'x') == 'Hello x world!'`. Replacement callbacks receive the original Unicode emoji's UTF-16 span. If `f = lambda e,d: '[{},{}]'.format(d['match_start'],d['match_end'])`, then `replace_emoji('A😀B', replace=f) == 'A[1,3]B'`.
+
+## Match objects, tokenization, and analysis
+
+All position-bearing outputs and callback metadata use zero-based UTF-16 code-unit offsets into the original input, with exclusive ends, by default. For a Python prefix `s[:i]`, the offset is `sum(2 if ord(c)>0xFFFF else 1 for c in s[:i])`. Count every original character, including supplementary non-emoji and characters suppressed from the token stream. BMP characters, selectors, ZWJs, combining marks and individual surrogate code points count as one unit each. Keep text as ordinary Python `str`; do not normalize it or expand supplementary scalars into surrogate characters. Use these coordinates consistently in emoji_list, tokenizer/analyze matches, data_copy, filter_tokens, joined non-RGI matches and all split children.
+
+Keep these classes importable from `emoji.tokenizer` and the package entry point:
+
+* `EmojiMatch(emoji: str, start: int, end: int, data: dict | None)` has `emoji`, `start`, `end`, and `data`. Explicit constructor start/end values are already UTF-16 units and must be retained verbatim. Its `data_copy()` returns a fresh metadata dictionary with `match_start` and `match_end`; for `data=None` it returns only those two keys. Mutating the copy must not alter dataset metadata. `is_zwj()` tests for U+200D. `split()` returns self for a non-ZWJ match, or an `EmojiMatchZWJ` for a ZWJ match. `repr` includes class name, original emoji text, and `start:end`.
+* `EmojiMatchZWJ(match)` retains the parent text, metadata and supplied span, and has an `emojis` list of constituent `EmojiMatch` objects split at U+200D. Child positions start at the supplied parent start and advance by the UTF-16 widths of each constituent plus one unit for each intervening ZWJ. For example splitting `EmojiMatch("👨‍👧", 10, 15, data)` gives child spans `(10,12)` and `(13,15)`. Its `join()` returns the original sequence, `is_zwj()` is true, and `split()` returns self.
+* `EmojiMatchZWJNonRGI(first_emoji_match, second_emoji_match)` accumulates non-RGI sequences. `_add(next_emoji_match)` appends a child; `_update()` joins child text with ZWJs, sets start from the first child and end from the last child, and sets `data=None`. Preserve child spans and order. Inherited `join`, `split`, and metadata-copy behavior work for these objects.
+* `Token` is a named tuple with `chars: str` and `value: str | EmojiMatch`, supporting tuple comparison and attribute access. Its text stays ordinary Python `str`.
+
+Provide `tokenize(string: str, keep_zwj: bool) -> Iterator[Token]`, `filter_tokens(matches, emoji_only: bool, join_emoji: bool) -> Iterator[Token]`, and `get_search_tree() -> dict` in `emoji.tokenizer`. Use the complete dataset to detect whole RGI sequences, while non-RGI ZWJ sequences can yield multiple recognized constituents. `tokenize` yields original emoji substrings paired with matches and ordinary non-emoji characters as `(char, char)`. Unattached VS15/VS16 are suppressed from the stream. `keep_zwj` controls whether ZWJs separating non-RGI constituents are yielded as ordinary characters. Recognition must handle backtracking around components, malformed/incomplete sequences, and consecutive or leading/trailing ZWJs. Preserve non-joining ordinary ZWJs. Build/cache the character trie lazily in `_SEARCH_TREE`, retaining `_ZWJ = '\u200d'`.
+
+`filter_tokens` preserves match text, data and coordinates while filtering or joining. With `join_emoji=True`, recognized matches separated by a joining ZWJ are accumulated as `EmojiMatchZWJNonRGI`. `emoji_only` controls inclusion of ordinary text. Use these low-level filtering rules: when `join_emoji=False` and `emoji_only=False`, pass tokens through; when `join_emoji=False` and `emoji_only=True`, remove ZWJ tokens while otherwise passing through the input stream.
+
+`analyze(string, non_emoji=False, join_emoji=True) -> Iterator[Token]` combines `tokenize(string, keep_zwj=True)` with filtering. Use exactly `filter_tokens(tokenize(string, keep_zwj=True), emoji_only=not non_emoji, join_emoji=join_emoji)` for the stream. With the default `join_emoji=True`, `non_emoji=False` returns only emoji matches and `non_emoji=True` includes ordinary characters. With `join_emoji=False`, follow the low-level pass-through rules above: constituent matches remain separate, ordinary non-ZWJ character tokens remain in the stream even when `non_emoji=False`, and ZWJ character tokens remain only when `non_emoji=True`. For `a👨‍👧b`, the default stream contains one RGI match, with span `(1,6)` and split child spans `[(1,3),(4,6)]`. Text and metadata are preserved.
+
+## Enumeration, detection, and configuration
+
+Implement and export:
+
+```python
+emoji_list(string) -> list[dict]
+distinct_emoji_list(string) -> list[str]
+emoji_count(string, unique=False) -> int
+is_emoji(string) -> bool
+purely_emoji(string) -> bool
+version(string) -> float
+```
+
+`emoji_list` returns ordered dictionaries with exactly `emoji`, `match_start`, `match_end` (also define `core._EmojiListReturn`). It enumerates recognized RGI matches separately within non-RGI ZWJ sequences. For example `emoji_list('Hi, I am fine. 😁') == [{'match_start':15,'match_end':17,'emoji':'😁'}]`, `emoji_list('A😀B') == [{'match_start':1,'match_end':3,'emoji':'😀'}]`, and `emoji_list('𝄞😀❤')` gives spans `(2,4)` and `(4,5)`. `distinct_emoji_list` removes duplicate strings; its order is unspecified. `emoji_count` counts occurrences or distinct strings if `unique=True`; `emoji_count('Hello 😄😄😄') == 3` and its unique count is 1.
+
+`is_emoji` is exact membership in `EMOJI_DATA`, including dataset qualification forms; it rejects ordinary text, concatenations of separate emoji, and bare selectors. `purely_emoji` uses analysis to determine whether all yielded tokens are emoji, accepts the empty string, and respects selector suppression and ZWJ grouping. `version` returns the version of the first recognized emoji, accepting Unicode or shortcode names (including localized names and aliases); raise `ValueError` if none is recognizable. For example `version(':butterfly:') == 3.0` and `version(':brain:') == 5`.
+
+`config.demojize_keep_zwj=True` and `config.replace_emoji_keep_zwj=False` are mutable module-wide defaults. For non-RGI ZWJ sequences, demojize keeps joining ZWJs by default so emojize can reconstruct the input; disabling it removes the joining ZWJs. Replacement by default replaces separate constituents and removes their joining ZWJs; enabling `replace_emoji_keep_zwj` treats the joined non-RGI sequence as one match for replacement. These settings do not change RGI handling; malformed ordinary ZWJs must not disappear.
+
+## Utility and maintenance interfaces
+
+Retain the supplied utilities as working Python modules; do not replace the dataset with a small hardcoded table. Keep their existing signatures, constants, and data shapes:
+
+* `utils.testutils`: `load_all_languages()` pytest fixture; `ascii(s)`, `normalize(form,s)`, `is_normalized(form,s)`; cached `get_emoji_unicode_dict(lang)` and `get_aliases_unicode_dict()` using fully qualified/component entries; generators `all_language_packs()`, `all_language_and_alias_packs()` (aliases first), and `get_language_packs(*langs)`. Keep `_EMOJI_UNICODE` and `_ALIASES_UNICODE` caches. Escape helpers return `s.encode('unicode-escape').decode()`.
+* `utils.generateutils`: `to_ascii(s)`; `get_text_from_url(url)` uses requests with a fallback when blocked; `get_text_from_cloudflare_url(url)` lazily creates/reuses a cloudscraper session. `adapt_emoji_name(text,lang,emj)` normalizes annotation names into colon-delimited shortcodes, with whitespace/punctuation cleanup and German clock/skin-tone fixes, Farsi zero-width cleanup, Turkish dot removal, Arabic diacritic/comma removal and duplicate overrides, and Chinese/Russian special cases as supplied.
+* `utils.generate_emoji`: `get_emoji_from_url(version)` and `get_emoji_variation_sequence_from_url(version)` fetch Unicode test/variation lines; `get_cheat_sheet(url)` parses WebFX codes with malformed/flag filtering; `get_emoji_from_youtube(url)` produces emoji-to-alias-list mappings; `extract_emojis(lines, sequences)` parses code points, names, status, version and variant support, skipping comments and detecting duplicates; `get_emoji_from_github_api(url)` decodes Unicode sprite paths while excluding custom images; `find_github_aliases(emj,github_dict,v,emj_no_variant=None)` returns a set with exact, variant and cleaned matching. Keep `GITHUB_REMOVED_CHARS` removing ZWJ, VS15 and VS16.
+* `utils.generate_emoji_translations`: `get_emojiterra_from_url(url)` parses localized emoji names from keyboard-page items with quality validation; `get_UNICODE_EMOJI(lang)` extracts available localized names; `add_unicode_annotations(data,lang,url)` imports CLDR XML tts annotations, normalizes names and reports changes; `extract_names(github_tag,github_lang,lang,emoji_terra=None)` combines base metadata, main/derived CLDR and optional fallback translations, propagating selector variants and prioritizing RGI forms.
+* Retain `utils/gh-pages` resources and page generation, including template/output directory constants, Django template configuration, CSS and JavaScript. Preserve the supplied example's conversion behavior.
+
+Keep all conversion text, data, qualification recognition, language loading, version thresholds, callback invocation order, grouping, counts, detection and utility behavior consistent with these requirements. Strings must remain ordinary unchanged Python strings; only shortcode-name lookup uses the specified normalization.

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">How benchmark tasks are built</title>
+  <desc id="desc">Seeds from four sources become paired Harbor tasks. Authors build the environment, select the turns, and write a standalone final request. Reviewers check requirements and tests, equivalence across paths, meaningful changes, and shortcuts. Oracle and no-op checks and inspection of trial traces help catch task defects.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0l8 4-8 4z" fill="#60758d"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="1278" height="638" rx="24" fill="#f8faff" stroke="#d9e3ef" stroke-width="2"/>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#152741">
+    <text x="46" y="46" font-size="16" font-weight="700" letter-spacing="2" fill="#28559d">ADAPTABILITY BENCHMARK</text>
+    <text x="46" y="93" font-size="42" font-weight="700">How benchmark tasks are built</text>
+    <text x="46" y="128" font-size="22" fill="#465a72">Each seed becomes two Harbor tasks with the same final requirements.</text>
+
+    <path d="M76 179h267m29 0h267m29 0h267m29 0h268" stroke="#d1deee" stroke-width="2"/>
+    <g fill="#28559d" stroke="#f8faff" stroke-width="5">
+      <circle cx="66" cy="179" r="19"/><circle cx="362" cy="179" r="19"/>
+      <circle cx="658" cy="179" r="19"/><circle cx="954" cy="179" r="19"/>
+    </g>
+    <g fill="#fff" text-anchor="middle" font-size="16" font-weight="700">
+      <text x="66" y="185">1</text><text x="362" y="185">2</text>
+      <text x="658" y="185">3</text><text x="954" y="185">4</text>
+    </g>
+    <g font-size="24" font-weight="700">
+      <text x="46" y="226">Select a seed</text>
+      <text x="342" y="226">Build the pair</text>
+      <text x="638" y="226">Review the pair</text>
+      <text x="934" y="226">Validate and trial</text>
+    </g>
+    <g font-size="20" fill="#465a72">
+      <text x="46" y="263">EvoCodeBench</text>
+      <text x="46" y="293">NL2Repo</text>
+      <text x="46" y="323">SWE-Journey</text>
+      <text x="46" y="353">SWE-chat</text>
+
+      <text x="342" y="263">Build the environment.</text>
+      <text x="342" y="293">Select or author turns.</text>
+      <text x="342" y="323">Write a standalone</text>
+      <text x="342" y="349">final request.</text>
+
+      <text x="638" y="263">Match tests to instructions.</text>
+      <text x="638" y="293">Compare final requirements.</text>
+      <text x="638" y="323">Check for a meaningful</text>
+      <text x="638" y="349">change and possible shortcuts.</text>
+
+      <text x="934" y="263">Require Oracle = 1, Nop = 0.</text>
+      <text x="934" y="293">Inspect trial traces.</text>
+      <text x="934" y="323">Fix task defects found</text>
+      <text x="934" y="349">during review or trials.</text>
+    </g>
+    <path d="M1068 378v23H756v-25" fill="none" stroke="#60758d" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+    <text x="912" y="427" text-anchor="middle" font-size="17" fill="#465a72">Recheck after a revision</text>
+
+    <rect x="46" y="463" width="1188" height="130" rx="15" fill="#eaf2ff" stroke="#d5e3f6"/>
+    <text x="68" y="506" font-size="20" font-weight="700" fill="#28559d">HARBOR PAIR</text>
+    <text x="68" y="539" font-size="19" fill="#465a72">One task family</text>
+    <path d="M265 484v87m493-87v87" stroke="#c1d4ec"/>
+    <g font-family="Consolas, monospace" font-size="22" font-weight="700">
+      <text x="290" y="511">adapt/</text><text x="782" y="511">direct-b/ or direct-final/</text>
+    </g>
+    <g font-size="19" fill="#465a72">
+      <text x="290" y="544">Initial environment and ordered stages</text>
+      <text x="290" y="570">Each stage has its own instruction and tests.</text>
+      <text x="782" y="544">Same starting point and a single final request</text>
+      <text x="782" y="570">The final tests check the same contract.</text>
+    </g>
+  </g>
+</svg>

@@ -1,7 +1,34 @@
-# Adaptability evaluation
+# Adaptability Benchmark
 
-The runner evaluates the 79 released Harbor families with Terminus-2. The
-default is five independent samples per condition and family.
+How well do coding agents adapt when users change what the software should do?
+Adaptability Benchmark pairs a sequence of changing requests with a standalone
+request for the same final behavior. Both paths start from the same repository
+and are scored against the same final requirements.
+
+![Emoji-Process switches from Python indices to UTF-16 offsets. The four evaluation conditions vary the starting code and conversation at the final request.](figures/task-and-evaluation.svg)
+
+## Task examples
+
+| Example | Source | Turns | Requirement change |
+| --- | --- | ---: | --- |
+| [Mini compiler closures](examples/README.md#mini-compiler-closures) | EvoCodeBench | 2 | Snapshot capture becomes shared lexical bindings. |
+| [Emoji-Process offsets](examples/README.md#emoji-process-offsets) | NL2Repo | 2 | Existing match APIs switch from Python indices to UTF-16 code units. |
+| [Dungeon lighting](examples/README.md#dungeon-lighting) | SWE-chat | 3 | Lighting moves from authored emitters to identity-based inference, then returns to an emitter design for fixed decorations. |
+| [qutebrowser diagnostics](examples/README.md#qutebrowser-diagnostics) | SWE-Journey | 18 | Debugging output grows into a shareable diagnostic surface with redaction on by default. |
+
+Each example includes all original turn instructions and its standalone final
+instruction. Download the full Harbor packages to run them.
+
+## Task construction
+
+![Task construction proceeds from seed selection through paired authoring, instruction and test review, Oracle and Nop checks, and trial-driven revision.](figures/task-construction.svg)
+
+## Evaluation
+
+The runner evaluates 79 Harbor task families (43 two-turn and 36 multi-turn)
+with Terminus-2. The default is five independent samples per condition and
+family. For two-turn tasks, $q$ is the final pass rate among `full` runs that
+passed A.
 
 | Condition | Families | Default samples | Model-visible starting state |
 |---|---:|---:|---|

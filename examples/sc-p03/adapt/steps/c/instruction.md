@@ -1,0 +1,13 @@
+Remember how you were about to add a LightEmitter component? I've thought it over and I've come around. AudioEmitter works nicely, and the cost of all this indirection is getting hard to justify. Let's weave in a canonical LightEmitter and deepen the cut for mostly fixed decorative lights.
+
+Replace fixed decoration identity lighting with one flat `LightEmitter` per entity, exported from `src/rules/components/LightEmitter.js` and the components index. The fields are:
+
+- `radius` (default 0), `shadowSoftness` (6), `temporalPattern` ("steady"), `phaseSeed` (0)
+- `intensity` (1) as authored baseline brightness, and `intensityScale` (1) as a separate multiplier
+- `colorShiftScale` (1), `voidStrength` (null), `baseColor` ("#ffffff")
+
+No emitter lists or gameplay-state predicates like `whenState` on this component. Support authoring baseColor as CSS hex `#rgb` or `#rrggbb`, with RGB arrays as a fallback; use hex for authored fixtures. WorldView should expose positioned emitters in `view.lightEmitters`, normalizing color to an RGB array. Keep the generic collector path independent of decoration identities. Nonpositive radii emit nothing. Null voidStrength means normal; a non-null value, including zero, means void. Normal brightness is `intensity * intensityScale * evaluatePattern(temporalPattern, time, id + phaseSeed).intensity`; colorShiftScale scales the pattern's per-channel color modulation. Void strength uses the same brightness multiplier. Shadow softness and radius remain independent controls.
+
+Migrate dungeon fountains, altars, runestones, mushrooms, placed torches, steam vents, candle clusters, ember braziers, glowcap patches, web motes, mist vents, void cracks and dark reliquaries, plus town alchemy/enchanting benches, church altars/fonts, cooking fires and fountains. The migrated fixed decorations (apart from the existing torch compatibility path) should stop lighting when their component is removed or disabled, even if their identity remains. An attached emitter overrides same-entity legacy lighting without duplicate blooms. Keep materials, reflection, palette coverage and the thematic generation from the decoration pass.
+
+Keep a blended surface for now: reactive shrines, pressure plinths, traps, furnace state, carried/equipped/projectile lights, statuses and bursts stay on their existing state/event paths. Keep trap semantics, material optics, hidden-trap invisibility, negative coordinates and memory suppression working. Don't migrate glyphs or particles, and leave floor/volume work for later. This is about making authored lighting easier to maintain.

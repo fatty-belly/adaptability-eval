@@ -1,0 +1,3 @@
+Please change the in-memory RAM log cache so that consecutive identical log records no longer consume multiple slots in the bounded buffer. If a newly logged record matches the most recently cached one by logger name, level, and rendered message text, keep just one retained entry for that run of repeats and increase an occurrence count instead of appending another record. For different messages, or for identical messages separated by some other message, keep the current behavior where each occurrence is retained as its own entry.
+
+The retained record's occurrence count is available as `count`, with 1 for a unique record.

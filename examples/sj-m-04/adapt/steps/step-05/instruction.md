@@ -1,0 +1,3 @@
+Please improve the global object-registry dump from `objreg.dump_objects`. Right now the registry dump shows registered objects with plain `repr(obj)`, which is too bare and can be unsafe for stale Qt objects. I want the dump output to use the same richer, deletion-safe QObject representation used elsewhere, so registered `QObject` instances show helpful `objectName`/class information when available and the dump doesn't blow up if a registered Qt object has already been deleted. Please preserve the existing representation behavior for other supported values.
+
+Keep the registry dump as an insertion-ordered list of strings, one `name: representation` entry per registration. Preserve the existing ` (for commands only)` suffix after the representation where applicable.

@@ -1,0 +1,5 @@
+Please make the privacy redaction the default for every diagnostic surface that already exposes these logs and crash details, so existing consumers are protected automatically without having to opt in. That includes the in-app log page, the copyable/plain-text log output, and crash-report generation. At the same time, there should still be an explicit, deliberate way for a trusted local developer to request the raw unredacted output when they need it for debugging: a trusted developer can set the QUTE_DEBUG_NO_REDACT environment variable to a truthy value (such as "1") before launching qutebrowser to obtain the raw, unmasked diagnostic output, while the unredacted form is never the default. The normal default behavior should stay compatible with existing usages, just with redaction now applied automatically.
+
+Recognized truthy values are `1`, `true`, `yes` and `on` (case-insensitive). An unset/empty value, false spellings and unrecognized strings keep masking enabled.
+
+Apply the developer opt-out consistently to text, HTML, JSON and crash-report context. Produce masked views without changing the retained logger records merely to render those views.
