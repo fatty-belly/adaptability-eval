@@ -1,11 +1,13 @@
 # Adaptability Benchmark
 
+![Task and evaluation setting. Direct and full paths lead to the same final requirement, with four conditions at the final request.](figures/task-and-evaluation.png)
+
+![Task construction. A Harbor task pair sits alongside seed selection, construction, audit, trials, and Oracle and Nop validation.](figures/task-construction.png)
+
 How well do coding agents adapt when users change what the software should do?
 Adaptability Benchmark pairs a sequence of changing requests with a standalone
 request for the same final behavior. Both paths start from the same repository
 and are scored against the same final requirements.
-
-![Emoji-Process switches from Python indices to UTF-16 offsets. The four evaluation conditions vary the starting code and conversation at the final request.](figures/task-and-evaluation.svg)
 
 ## Task examples
 
@@ -18,10 +20,6 @@ and are scored against the same final requirements.
 
 Each example includes all original turn instructions and its standalone final
 instruction. Download the full Harbor packages to run them.
-
-## Task construction
-
-![Task construction proceeds from seed selection through paired authoring, instruction and test review, Oracle and Nop checks, and trial-driven revision.](figures/task-construction.svg)
 
 ## Evaluation
 
