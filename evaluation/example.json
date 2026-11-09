@@ -1,0 +1,10 @@
+{
+  "model": "openai/gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "attempts": 5,
+  "concurrency": 16,
+  "max_retries": 2,
+  "environment": "evaluation.docker:TerminusDockerEnvironment",
+  "docker_build_network": null,
+  "min_free_gib": 20
+}
