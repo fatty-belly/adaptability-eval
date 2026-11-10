@@ -24,16 +24,16 @@ instruction. Download the full Harbor packages to run them.
 ## Evaluation
 
 The runner evaluates 79 Harbor task families (43 two-turn and 36 multi-turn)
-with Terminus-2. The default is five independent samples per condition and
+with Terminus-2. The default is three independent samples per condition and
 family. For two-turn tasks, $q$ is the final pass rate among `full` runs that
 passed A.
 
 | Condition | Families | Default samples | Model-visible starting state |
 |---|---:|---:|---|
-| `baseline` | 79 | 395 | Fresh workspace and conversation. The direct-B or direct-final instruction is given as a single task. |
-| `full` | 79 | 395 | Fresh workspace at A. Subsequent turns keep the code and conversation, including after a failed verifier result. Only the last turn contributes the final score. |
-| `reset` | 43 two-turn | 215 | The corresponding `full` sample's saved A workspace. B starts a fresh conversation. |
-| `oracle` | 43 two-turn | 215 | The released A reference implementation. B starts a fresh conversation. |
+| `baseline` | 79 | 237 | Fresh workspace and conversation. The direct-B or direct-final instruction is given as a single task. |
+| `full` | 79 | 237 | Fresh workspace at A. Subsequent turns keep the code and conversation, including after a failed verifier result. Only the last turn contributes the final score. |
+| `reset` | 43 two-turn | 129 | The corresponding `full` sample's saved A workspace. B starts a fresh conversation. |
+| `oracle` | 43 two-turn | 129 | The released A reference implementation. B starts a fresh conversation. |
 
 Every two-turn `full` sample contributes a slot to each ablation, including
 samples that failed A. Both ablations use the existing B instruction with the
