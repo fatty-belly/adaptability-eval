@@ -4,19 +4,18 @@ These are the original benchmark instructions for four task families. The
 multi-turn version reveals one request at a time. The direct version asks for
 the final behavior in one request from the same initial repository.
 
-## Mini compiler closures
+## Nexus run-record migration
 
-**EvoCodeBench · 2 turns · `legacy-003`**
+**EvoCode-Bench · 2 turns · `new28-029`**
 
-The original compiler contract gives each closure a scalar snapshot. The
-follow-up asks for shared lexical bindings so a setter and getter created
-together can observe each other's updates, even after the enclosing function
-returns. The direct request specifies shared capture as part of the language
-contract from the start.
+The initial ML pipeline engine stores step results in an array. The next request
+changes them to a name-indexed object with an explicit execution-order field,
+while requiring old saved runs and artifact lookup to keep working. Direct
+specifies the final record format and compatibility behavior from the start.
 
-[Turn A](legacy-003/adapt/steps/a/instruction.md) ·
-[Turn B](legacy-003/adapt/steps/b/instruction.md) ·
-[Direct B](legacy-003/direct-b/instruction.md)
+[Turn A](new28-029/adapt/steps/a/instruction.md) ·
+[Turn B](new28-029/adapt/steps/b/instruction.md) ·
+[Direct B](new28-029/direct-b/instruction.md)
 
 ## Emoji-Process offsets
 
@@ -65,11 +64,11 @@ keeping an explicit raw mode for local debugging.
 ## Run these examples
 
 The complete Harbor packages include environments, reference solutions and
-verifiers. Follow the [dataset download and preparation steps](../README.md#install-and-download),
+verifiers. Follow the [dataset download steps](../README.md#install-and-download),
 then use the family IDs to select these examples.
 
 ```bash
 python -m evaluation.run --data /data/benchmarks/adaptability-harbor \
-  --run-dir /data/runs/adaptability-examples --arms baseline,full \
-  --include legacy-003 new9-006 sc-p03 sj-m-04
+  --run-dir /data/runs/adaptability-examples --arms direct,full \
+  --include new28-029 new9-006 sc-p03 sj-m-04
 ```

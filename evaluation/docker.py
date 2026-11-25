@@ -9,6 +9,13 @@ from harbor.environments.docker.docker import DockerEnvironment
 
 
 class TerminusDockerEnvironment(DockerEnvironment):
+    async def start(self, force_build):
+        await super().start(force_build)
+        if os.environ.get('URECBENCH_TASK_ID') == 'new28-026' and self.environment_dir.name == 'tests':
+            result = await self.exec(command='if test -d /usr/local/lib/python3.12/site-packages; then chmod -R a+rX /usr/local/lib/python3.12/site-packages; fi', user='root', cwd='/')
+            if result.return_code:
+                raise RuntimeError('Trusted verifier dependencies are not readable')
+
     @property
     def _docker_compose_paths(self):
         paths = super()._docker_compose_paths

@@ -3,6 +3,7 @@ from harbor.cli.main import app
 from evaluation.agents import install_ablation
 from evaluation.continuous import install_continue_after_failure
 from evaluation.terminus import FinalTerminus2
+from evaluation.isolation import install as install_verifier_isolation
 
 
 def install_terminal_guard():
@@ -21,6 +22,7 @@ def install_terminal_guard():
 
 
 if __name__ == '__main__':
+    install_verifier_isolation()
     install_terminal_guard()
     install_continue_after_failure()
     install_ablation()

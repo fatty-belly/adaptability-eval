@@ -1,5 +1,6 @@
 {
   "model": "openai/gpt-6.1-sol",
+  "api_base": null,
   "reasoning_effort": "high",
   "attempts": 3,
   "concurrency": 16,

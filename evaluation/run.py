@@ -15,7 +15,7 @@ import time
 
 from harbor.models.task.task import Task
 from evaluation.retries import retryable_exception, retry_delay
-from evaluation.prepare_data import ARTIFACT_FAMILIES
+from evaluation.data import validate
 
 REPO = Path(__file__).resolve().parents[1]
 ARMS = ('baseline', 'full', 'reset', 'oracle')
@@ -44,6 +44,8 @@ def now():
 
 
 def discover(data_dir, include):
+    release = validate(data_dir)
+    declared = {row['id']: row for row in release['families']}
     families = {}
     for marker in sorted(data_dir.rglob('task.toml')):
         parts = marker.relative_to(data_dir).parts
@@ -59,8 +61,8 @@ def discover(data_dir, include):
         task = Task(marker.parent)
         steps = [s.name for s in (task.config.steps or [])]
         if variant == 'adapt':
-            if ident in ARTIFACT_FAMILIES and not any(getattr(a, 'source', a)=='/app' for a in task.config.artifacts):
-                raise ValueError(f'Missing /app artifact declaration for {ident}. Run python -m evaluation.prepare_data first.')
+            if track == 'two-turn' and not any(str(getattr(a, 'source', a)).startswith(('/app', '/workspace')) for a in task.config.artifacts):
+                raise ValueError(f'Missing workspace capture for {ident}; download the expanded release again.')
             if len(steps) < 2 or (track == 'two-turn' and steps != ['a', 'b']):
                 raise ValueError(f'Unexpected stage sequence: {ident} {steps}')
             if any(step.min_reward is not None for step in task.config.steps):
@@ -68,8 +70,12 @@ def discover(data_dir, include):
         elif steps:
             raise ValueError(f'Direct task must be single-step: {ident}')
         family['variants'][variant] = {'path': str(marker.parent), 'checksum': task.checksum, 'steps': steps}
+        if ident not in declared or variant not in declared[ident]['variants'] or task.checksum != declared[ident]['variants'][variant]['checksum']:
+            raise ValueError(f'Task differs from its published manifest: {ident}/{variant}')
     if not families or (include and set(families) != include):
-        raise ValueError('The requested families were not found in the extracted Harbor archive')
+        raise ValueError('The requested families were not found in the expanded dataset')
+    if not include and set(families) != set(declared):
+        raise ValueError('Dataset family membership differs from the release manifest')
     for family in families.values():
         if len(family['variants']) != 2:
             raise ValueError(f"Expected one adapt and one direct package for {family['id']}")
@@ -100,7 +106,7 @@ def checkpoint(root, ident, slot):
             raise ValueError(f'Checkpoint path is missing: {ident} slot {slot}')
         mappings.append({'source': record['source'], 'local': str(local)})
     if not mappings:
-        raise ValueError(f'No saved A workspace for {ident} slot {slot}. Run evaluation.prepare_data and collect a fresh full result.')
+        raise ValueError(f'No saved A workspace for {ident} slot {slot}. Check artifact collection before collecting a fresh full result.')
     return {'a_artifacts': str(artifacts), 'mappings': mappings, 'a_reward': state['rewards'][0],
             'full_b_reward': state['rewards'][1], 'source_result': str(source),
             'source_sha256': state['native_result_sha256']}
@@ -162,6 +168,8 @@ def execute(root, cfg, arm, family, slot, input_row):
                DISABLE_AIOHTTP_TRANSPORT='True', TMPDIR=str(root/'runtime/tmp'),
                TEMP=str(root/'runtime/tmp'), TMP=str(root/'runtime/tmp'),
                ADAPTABILITY_DOCKER_TOOLING=str(root/'runtime/docker-tooling'))
+    env['HARBOR_SHARED_VERIFIER_ISOLATION_EVENTS'] = str(folder/'isolation-events')
+    env['URECBENCH_TASK_ID'] = family['id']
     env.pop('ADAPTABILITY_DOCKER_BUILD_NETWORK', None)
     if cfg.get('docker_build_network'):
         env['ADAPTABILITY_DOCKER_BUILD_NETWORK'] = cfg['docker_build_network']
@@ -222,11 +230,11 @@ def report(root, families, attempts):
 
 def main():
     parser=ArgumentParser(description=__doc__)
-    parser.add_argument('--data',type=Path,required=True,help='Directory containing the extracted task archive')
+    parser.add_argument('--data',type=Path,required=True,help='Directory containing the expanded HF dataset')
     parser.add_argument('--run-dir',type=Path,required=True)
     parser.add_argument('--config',type=Path,default=Path(__file__).with_name('example.json'))
     parser.add_argument('--model',help='Override the model in the JSON configuration')
-    parser.add_argument('--arms',default='all',help='all or a comma-separated subset of baseline,full,reset,oracle')
+    parser.add_argument('--arms',default='all',help='all or direct,full,reset,oracle; baseline is an alias for direct')
     parser.add_argument('--include',nargs='+',default=[],help='Optional family IDs for a small run')
     parser.add_argument('--dry-run',action='store_true',help='Validate data and show sample counts without launching a model')
     args=parser.parse_args()
@@ -237,7 +245,7 @@ def main():
     if type(cfg['max_retries']) is not int or cfg['max_retries']<0:raise ValueError('max_retries must be a nonnegative integer')
     if cfg.get('docker_build_network') not in (None, 'host', 'default', 'none'):
         raise ValueError('docker_build_network must be null, host, default or none')
-    arms=set(ARMS) if args.arms=='all' else set(args.arms.split(','))
+    arms=set(ARMS) if args.arms=='all' else {'baseline' if a=='direct' else a for a in args.arms.split(',')}
     if not arms or not arms <= set(ARMS):raise ValueError('Invalid evaluation conditions')
     families=discover(args.data.resolve(),set(args.include))
     count=sum(f['track']=='two-turn' for f in families)

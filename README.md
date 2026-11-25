@@ -1,117 +1,167 @@
-# Adaptability Benchmark
+# UReCBench: User Requirement Change Benchmark
 
-![Task and evaluation setting. Direct and full paths lead to the same final requirement, with four conditions at the final request.](figures/task-and-evaluation.png)
+How well can coding agents adapt when users change what the software should do?
+UReCBench pairs a sequence of changing user requests with a standalone request
+for the **same final behavior**, evaluated against the same final verifier.
 
-![Task construction. A Harbor task pair sits alongside seed selection, construction, audit, trials, and Oracle and Nop validation.](figures/task-construction.png)
+![Two paths to the same final requirements: direct implementation and multi-round revision.](figures/task-and-evaluation.png)
 
-How well do coding agents adapt when users change what the software should do?
-Adaptability Benchmark pairs a sequence of changing requests with a standalone
-request for the same final behavior. Both paths start from the same repository
-and are scored against the same final requirements.
+[Dataset on Hugging Face](https://huggingface.co/datasets/fatty-belly/adaptability-harbor) ·
+[Browse task instructions](https://huggingface.co/datasets/fatty-belly/adaptability-harbor/viewer/tasks/test) ·
+[Four examples](examples/README.md)
+
+## Benchmark
+
+The frozen release contains **42 repository-level tasks: 23 two-turn and 19
+multi-round**, with sequences of up to 23 user requests. Each family has two
+native Harbor packages: `adapt` and `direct-b` or `direct-final`.
+
+| Source | Two-turn | Multi-round | Total |
+|---|---:|---:|---:|
+| EvoCode-Bench | 6 | 7 | 13 |
+| NL2Repo-Bench | 9 | 7 | 16 |
+| SWE-Journey | 2 | 2 | 4 |
+| SWE-chat | 6 | 3 | 9 |
+| **Total** | **23** | **19** | **42** |
+
+![A Harbor task pair and a six-turn example whose later requests revise earlier ranking and rematch rules.](figures/task-overview.png)
+
+Tasks are constructed from existing benchmarks, open-source repositories, and
+real user sessions, then validated with reference/no-edit controls and reviewed
+for instruction–test alignment. Pilot evaluations informed final task selection.
+The release retains 28 L2, 8 L3, and 6 L4 tasks; whole-task L0/L1 cases are excluded.
+
+![Task construction, review, change grading, and statistics for the 42-task release.](figures/task-construction.png)
 
 ## Task examples
 
 | Example | Source | Turns | Requirement change |
-| --- | --- | ---: | --- |
-| [Mini compiler closures](examples/README.md#mini-compiler-closures) | EvoCodeBench | 2 | Snapshot capture becomes shared lexical bindings. |
-| [Emoji-Process offsets](examples/README.md#emoji-process-offsets) | NL2Repo | 2 | Existing match APIs switch from Python indices to UTF-16 code units. |
-| [Dungeon lighting](examples/README.md#dungeon-lighting) | SWE-chat | 3 | Lighting moves from authored emitters to identity-based inference, then returns to an emitter design for fixed decorations. |
-| [qutebrowser diagnostics](examples/README.md#qutebrowser-diagnostics) | SWE-Journey | 18 | Debugging output grows into a shareable diagnostic surface with redaction on by default. |
+|---|---|---:|---|
+| [Nexus run-record migration](examples/README.md#nexus-run-record-migration) | EvoCode-Bench | 2 | Array-based step records become name-indexed records while preserving old runs and artifact lookup. |
+| [Emoji-Process offsets](examples/README.md#emoji-process-offsets) | NL2Repo-Bench | 2 | Existing match APIs switch from Python indices to UTF-16 code units. |
+| [Dungeon lighting](examples/README.md#dungeon-lighting) | SWE-chat | 3 | Lighting moves from authored emitters to identity-based inference, then restores an emitter design for fixed decorations. |
+| [qutebrowser diagnostics](examples/README.md#qutebrowser-diagnostics) | SWE-Journey | 18 | Diagnostic collection evolves into a shareable surface with privacy redaction enabled by default. |
 
-Each example includes all original turn instructions and its standalone final
-instruction. Download the full Harbor packages to run them.
-
-## Evaluation
-
-The runner evaluates 79 Harbor task families (43 two-turn and 36 multi-turn)
-with Terminus-2. The default is three independent samples per condition and
-family. For two-turn tasks, $q$ is the final pass rate among `full` runs that
-passed A.
-
-| Condition | Families | Default samples | Model-visible starting state |
-|---|---:|---:|---|
-| `baseline` | 79 | 237 | Fresh workspace and conversation. The direct-B or direct-final instruction is given as a single task. |
-| `full` | 79 | 237 | Fresh workspace at A. Subsequent turns keep the code and conversation, including after a failed verifier result. Only the last turn contributes the final score. |
-| `reset` | 43 two-turn | 129 | The corresponding `full` sample's saved A workspace. B starts a fresh conversation. |
-| `oracle` | 43 two-turn | 129 | The released A reference implementation. B starts a fresh conversation. |
-
-Every two-turn `full` sample contributes a slot to each ablation, including
-samples that failed A. Both ablations use the existing B instruction with the
-same opening sentence.
-
-> Continue from the existing implementation in the workspace.
-
-The runner checks the restored workspace against the saved archive, then runs
-the original A verifier before B. Reset must reproduce the paired A reward.
-Oracle must pass A. An invalid checkpoint is recorded as an error. B uses the
-released B verifier and task time limit. Source trials, verifier logs and
-per-slot results are stored separately under the output directory.
+Examples contain the complete instructions from the current release. Environments,
+reference solutions, and verifiers are distributed in the Hugging Face dataset.
 
 ## Install and download
 
-Run the following from the repository root on a Linux host with Python 3.12 and
-an accessible Docker daemon with Docker Compose. Harbor 0.23.0 is the version
-used for this runner.
+Use Linux, Python 3.12, Docker, and Docker Compose. The runner pins Harbor 0.23.0
+and includes the tested process-local backport of Harbor
+[PR #1961](https://github.com/harbor-framework/harbor/pull/1961), which clears shared
+verifier files before the next user stage. It checks the native lifecycle before
+installation and aborts on an unsupported version; it does not edit site-packages.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 
+# Required while the dataset is private: use an account with access.
 hf auth login
-hf download fatty-belly/adaptability-harbor adaptability-harbor.tar.gz \
-  --repo-type dataset --local-dir /data/benchmarks/adaptability-download
-mkdir -p /data/benchmarks/adaptability-harbor
-tar -xzf /data/benchmarks/adaptability-download/adaptability-harbor.tar.gz \
-  -C /data/benchmarks/adaptability-harbor
-python -m evaluation.prepare_data /data/benchmarks/adaptability-harbor
+python -m evaluation.download_data --local-dir /data/benchmarks/urecbench-42
 ```
 
-The [Hugging Face dataset](https://huggingface.co/datasets/fatty-belly/adaptability-harbor)
-is private. Authenticate with an account that has dataset access. The archive
-contains both native Harbor variants for each family. Keep the dataset and run
-outputs on a data volume outside this checkout.
+**The dataset is expanded, not one `.tar.gz` archive.** Downloads are incremental.
+The command validates file checksums and restores executable permissions that HF
+snapshots do not preserve. Published `task.toml` files already include final
+workload-aware time budgets and workspace capture declarations; no instruction,
+verifier, or artifact-capture patching step is required.
+The default dataset revision is the frozen tag `urecbench-42-v1`.
+Use `--revision HF_COMMIT_OR_TAG` to select a specific revision. Keep data and solver
+outputs outside this code checkout. Individual environment assets may still be
+archives consumed by their Dockerfiles; these are build inputs, not the dataset
+packaging format.
+
+The HF page provides two browsing configurations:
+
+- **`tasks`**: one row per family, including source, turn count, change level,
+  Direct instruction, ordered Full instructions, budgets, and package paths.
+- **`requests`**: one row per user request, making long chains easier to browse.
+
+You can also inspect these indexes with `datasets.load_dataset`:
+
+```python
+from datasets import load_dataset  # optional: pip install datasets
+tasks = load_dataset("fatty-belly/adaptability-harbor", "tasks", split="test", token=True)
+```
+
+The Parquet indexes support browsing; the expanded Harbor directories are the
+executable benchmark. Private-dataset access restrictions also apply to its viewer.
+
+## Evaluation protocol
+
+Terminus-2 is used in all conditions, with **three samples per family** by default.
+
+| Condition | Families | Default samples | Starting state |
+|---|---:|---:|---|
+| **Direct** (`direct`, alias `baseline`) | 42 | 126 | Initial workspace, fresh conversation, standalone final request. |
+| **Full** (`full`) | 42 | 126 | Initial workspace at A; code, conversation, and terminal session carry across user turns. |
+| **Reset** (`reset`) | 23 two-turn | 69 | The paired Full sample's saved A workspace, with a fresh conversation for B. |
+| **Oracle** (`oracle`) | 23 two-turn | 69 | A verified reference implementation of A, with a fresh conversation for B. |
+
+Full continues after failed intermediate checks; **only the last verifier determines
+final success**. Verifier feedback is not added to the agent conversation. Agent
+timeouts are scored using the saved implementation, rather than automatically
+counted as failures. API/infrastructure errors are retried within the configured limit.
+
+Reset includes both successful and failed A samples. Its checkpoint must reproduce
+the saved A reward; Oracle must pass A. These prechecks make no model calls. Both
+conditions prepend the same sentence to the existing B instruction:
+
+> Continue from the existing implementation in the workspace.
+
+Direct budgets are 2–6 hours. Each Full stage has a workload-based budget of at least
+20 minutes; Full totals are 1.17–1.80 times the corresponding Direct budget. Reset
+and Oracle use the same B budget as Full. There is no separate token/cost/turn cutoff.
 
 ## Configure and run
 
-Copy [`evaluation/example.json`](evaluation/example.json) to a local JSON file to set the model,
-reasoning effort, attempts per family, concurrency, retry budget and Harbor
-environment. The model name follows Harbor and LiteLLM conventions. Configure
-provider credentials in your shell, for example `OPENAI_API_KEY` for an OpenAI
-compatible provider. Set `api_base` in the config, or the provider's environment
-variables, when using a gateway. Keep credentials out of config files.
-
-The default extends Harbor's Docker driver with a build overlay that installs
-`tmux` when the task image lacks it. The overlay lives in the run directory.
-Images must be able to build on the evaluation host. To use a site-specific
-driver, set `environment` to its Harbor import path and supply the required host
-environment variables. For example, `DOCKER_HOST` selects the Docker daemon.
-The default driver accepts `docker_build_network` when the daemon requires a
-specific build network. A null value uses Docker's defaults.
-The idempotent preparation command adds the missing `/app` artifact
-declarations to eight extracted `task.toml` files. The runner reads those
-declarations through Harbor.
+Edit [`evaluation/example.json`](evaluation/example.json) to choose the model,
+reasoning effort, samples, concurrency, retries, and Docker settings. Credentials
+belong in environment variables, never configuration files or commits.
 
 ```bash
-# Validate the extracted data and enumerate all four conditions offline.
-python -m evaluation.run --data /data/benchmarks/adaptability-harbor \
-  --run-dir /data/runs/adaptability-run-1 --dry-run
+export OPENAI_API_KEY="YOUR_API_KEY"
+# Optional gateway: set api_base in your local JSON config.
 
-# Run baseline and full, then use the full checkpoints for reset and oracle.
-python -m evaluation.run --data /data/benchmarks/adaptability-harbor \
-  --run-dir /data/runs/adaptability-run-1 --config evaluation/example.json --arms all
+# Offline validation: no model calls or Docker launches.
+python -m evaluation.run --data /data/benchmarks/urecbench-42 \
+  --run-dir /data/runs/urecbench-model --arms all --dry-run
+
+# Main experiments.
+python -m evaluation.run --data /data/benchmarks/urecbench-42 \
+  --run-dir /data/runs/urecbench-model --config evaluation/example.json \
+  --arms direct,full
+
+# Two-turn ablations using the same run directory and Full checkpoints.
+python -m evaluation.run --data /data/benchmarks/urecbench-42 \
+  --run-dir /data/runs/urecbench-model --config evaluation/example.json \
+  --arms reset,oracle
 ```
 
-Use `--arms baseline,full` followed by `--arms reset,oracle` with the same
-configuration, dataset and run directory to schedule the phases separately.
-Use `--include FAMILY_ID ...` for a small subset, and `--model MODEL` to override
-the config's model. The run directory freezes the model configuration and task
-checksums. Changing either requires a new run directory.
+`--arms all` runs both phases in order. `--include FAMILY_ID ...` selects a subset;
+`--model MODEL` overrides the configured model using Harbor/LiteLLM naming.
+Concurrency is the combined number of active slots, not a per-condition limit.
+A run directory freezes configuration and task checksums. Reuse it to resume
+completed slots; use a new directory for a different model or configuration.
 
-Completed slot results are reusable when restarting the same run. Each attempt
-keeps its invocation receipt and native result. An unfinished invocation needs
-inspection before recovery. The runner retries recognized infrastructure errors
-within the configured limit and keeps genuine verifier zeros. `summary.json`
-reports planned, completed, passed and error counts by condition and task track.
-The `arms/` directory contains the per-sample records used to calculate paired
-and A-conditioned statistics.
+The Docker adapter adds `tmux` to build images that lack it and accepts optional
+`docker_build_network` (`null`, `host`, `default`, or `none`). `DOCKER_HOST` can
+select a daemon. Task environments must be buildable on the host; Docker image
+pulls and dependency downloads may require network access.
+
+Results are stored under `arms/`; Direct keeps the historical directory key
+`baseline` for compatibility. `summary.json` reports completion, passes, and errors
+by condition and by two-turn/multi-round track. The corresponding native Harbor
+results, checkpoints, and isolation receipts are retained for inspection.
+
+## Development checks
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+These tests exercise data integrity, path validation, and shared-verifier isolation
+without model calls. Benchmark tasks and results are not changed by the tests.
