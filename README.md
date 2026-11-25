@@ -80,6 +80,11 @@ The HF page provides two browsing configurations:
   Direct instruction, ordered Full instructions, budgets, and package paths.
 - **`requests`**: one row per user request, making long chains easier to browse.
 
+Hugging Face's [private Dataset Viewer](https://huggingface.co/docs/hub/datasets-viewer)
+requires a PRO account or a Team/Enterprise organization. Without that plan,
+authorized users can still browse the expanded files or read the Parquet indexes
+locally; public datasets support the online viewer.
+
 You can also inspect these indexes with `datasets.load_dataset`:
 
 ```python
